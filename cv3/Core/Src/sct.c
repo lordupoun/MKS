@@ -26,7 +26,7 @@ void sct_led(uint32_t value)
 void sct_value(uint16_t value)
 {
 	uint32_t reg=0;
-	reg |= reg_values[0][value / 100 % 10]; //stovky --- stačí
+	reg |= reg_values[0][value / 100 % 10]; //stovky --- stačí i bez modula ale neřešil by poslání více věcí
 	reg |= reg_values[1][value / 10 % 10]; //desítky
 	reg |= reg_values[2][value % 10]; //jednotky
 	sct_led(reg);
