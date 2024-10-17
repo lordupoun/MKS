@@ -161,6 +161,7 @@ int main(void)
 
     /* USER CODE BEGIN 3 */
 	  static enum { SHOW_POT, SHOW_VOLT, SHOW_TEMP } state = SHOW_POT;
+	  static uint32_t delay;
 	  if(HAL_GPIO_ReadPin(S1_GPIO_Port, S1_Pin)==1)
 	  {
 		  state=SHOW_VOLT;
@@ -178,10 +179,10 @@ int main(void)
 		break;
 		case SHOW_VOLT:
 			sct_value(temperature,0);
-			static uint32_t delay;
 			if (HAL_GetTick() > delay + 1000)
 			{
-				delay = Tick;
+				state = SHOW_POT
+				delay = HAL_GetTick;
 			}
 
 		break;
@@ -189,7 +190,8 @@ int main(void)
 	    	sct_value(voltage,0);
 	    	if (HAL_GetTick() > delay + 1000)
 	    	{
-	    		delay = Tick;
+	    		state = SHOW_POT
+	    		delay = HAL_GetTick;
 	    	}
 	    break;
 	  }
