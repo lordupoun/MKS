@@ -32,6 +32,12 @@
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
 
+/* Temperature sensor calibration value address */
+#define TEMP110_CAL_ADDR ((uint16_t*) ((uint32_t) 0x1FFFF7C2))
+#define TEMP30_CAL_ADDR ((uint16_t*) ((uint32_t) 0x1FFFF7B8))
+/* Internal voltage reference calibration value address */
+#define VREFINT_CAL_ADDR ((uint16_t*) ((uint32_t) 0x1FFFF7BA))
+
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -46,6 +52,8 @@ UART_HandleTypeDef huart2;
 
 /* USER CODE BEGIN PV */
 static volatile uint32_t raw_pot=0;
+static volatile uint32_t voltage;
+static volatile int32_t temperature;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -61,11 +69,46 @@ static void MX_ADC_Init(void);
 /* USER CODE BEGIN 0 */
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
 {
-	//raw_pot = HAL_ADC_GetValue(hadc);
+	static uint8_t channel;
 	static uint32_t avg_pot;
-	raw_pot = avg_pot >> 12; //ADC_Q = 12
-	avg_pot -= raw_pot;
-	avg_pot += HAL_ADC_GetValue(hadc);
+
+	//raw_pot = HAL_ADC_GetValue(hadc); //simple ADC reading
+
+	switch(channel)
+	{
+		case 0:
+			raw_pot = avg_pot >> 12; //ADC_Q = 12 - can vary - defines
+			avg_pot -= raw_pot;
+			avg_pot += HAL_ADC_GetValue(hadc);
+			break;
+		case 1:
+			static uint32_t raw_temp;
+			raw_temp=HAL_ADC_GetValue(hadc);
+			temperature = (raw_temp - (int32_t)(*TEMP30_CAL_ADDR));
+			temperature = temperature * (int32_t)(110 - 30);
+			temperature = temperature / (int32_t)(*TEMP110_CAL_ADDR - *TEMP30_CAL_ADDR);
+			temperature = temperature + 30;
+
+			//buttonTimer();
+
+			break;
+		case 2:
+			static uint32_t raw_volt;
+			raw_volt = HAL_ADC_GetValue(hadc); //simple ADC reading
+			voltage = 330 * (*VREFINT_CAL_ADDR) / raw_volt;
+			break;
+	}
+
+	if (__HAL_ADC_GET_FLAG(hadc, ADC_FLAG_EOS)) channel = 0;
+	else channel++;
+}
+void buttonTimer(void)
+{
+	static uint32_t delay;
+		if (HAL_GetTick() > delay + 1000)
+		{
+			delay = Tick;
+		}
 }
 /* USER CODE END 0 */
 
@@ -103,21 +146,53 @@ int main(void)
   /* USER CODE BEGIN 2 */
   sct_init();
   HAL_Delay(1000);
+
+  //Calibrates ADC
   HAL_ADCEx_Calibration_Start(&hadc);
+
   HAL_ADC_Start_IT(&hadc);
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-  while (1)
+  while (1) //MONO -> vsak me to nejde na rotacnim enkoderi
   {
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
+	  static enum { SHOW_POT, SHOW_VOLT, SHOW_TEMP } state = SHOW_POT;
+	  if(HAL_GPIO_ReadPin(S1_GPIO_Port, S1_Pin)==1)
+	  {
+		  state=SHOW_VOLT;
+	  }
+	  if(HAL_GPIO_ReadPin(S2_GPIO_Port, S2_Pin)==1)
+	  {
+		  state=SHOW_TEMP;
+	  }
+	  switch(state)
+	  {
+		case SHOW_POT: //do solo funkce
+			//max trimmer value = 4095; min trimmer value = 1; converting to interval <0;500>
+			sct_value((uint32_t)raw_pot*500.9/4095,raw_pot/505); //*9/4095 for led
+			HAL_Delay(50);
+		break;
+		case SHOW_VOLT:
+			sct_value(temperature,0);
+			static uint32_t delay;
+			if (HAL_GetTick() > delay + 1000)
+			{
+				delay = Tick;
+			}
 
-	  sct_value((uint32_t)raw_pot*500.9/4095,raw_pot/505); //8,176
-	  HAL_Delay(50);
-
+		break;
+	    case SHOW_TEMP:
+	    	sct_value(voltage,0);
+	    	if (HAL_GetTick() > delay + 1000)
+	    	{
+	    		delay = Tick;
+	    	}
+	    break;
+	  }
   }
   /* USER CODE END 3 */
 }
@@ -210,6 +285,22 @@ static void MX_ADC_Init(void)
   {
     Error_Handler();
   }
+
+  /** Configure for the selected ADC regular channel to be converted.
+  */
+  sConfig.Channel = ADC_CHANNEL_TEMPSENSOR;
+  if (HAL_ADC_ConfigChannel(&hadc, &sConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  /** Configure for the selected ADC regular channel to be converted.
+  */
+  sConfig.Channel = ADC_CHANNEL_VREFINT;
+  if (HAL_ADC_ConfigChannel(&hadc, &sConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
   /* USER CODE BEGIN ADC_Init 2 */
 
   /* USER CODE END ADC_Init 2 */
@@ -279,6 +370,12 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(B1_GPIO_Port, &GPIO_InitStruct);
+
+  /*Configure GPIO pins : S2_Pin S1_Pin */
+  GPIO_InitStruct.Pin = S2_Pin|S1_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
+  HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
   /*Configure GPIO pin : LD2_Pin */
   GPIO_InitStruct.Pin = LD2_Pin;
