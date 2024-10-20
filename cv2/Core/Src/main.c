@@ -68,7 +68,8 @@ void blikac(void)
 		delay = Tick;
 	}
 }
-
+//primitivni casove vzorkovani - kazdych, napriklad 40ms je nactena nova hodnota z tlacitka. Pokud je mensi nez puvodni hodnota - tzn. sestupná hrana - tlacitko se oznaci jako zmacknute (vykonaji se prikazy). Vzdy je pri tom nova hodnota ulozena jako stara.
+//Zde reseno bez casovace na 40ms
 void tlacitka(void) //dve techniky debouncningu: 1 kontrola zda predchozi hodnota je 1 a aktualni 0; nebo cteni pres promennou s bitovym posunem
 {
 	static uint16_t debounce = 0xFFFF;
@@ -76,7 +77,7 @@ void tlacitka(void) //dve techniky debouncningu: 1 kontrola zda predchozi hodnot
 
 		if (Tick > off_time)
 		{
-			LL_GPIO_ResetOutputPin(LED2_GPIO_Port, LED2_Pin);
+			LL_GPIO_ResetOutputPin(LED2_GPIO_Port, LED2_Pin); //Provadi se pokazde, LL je dostatecne rychly, nezdrzuje, nic se neprepisuje, nic se nedeje
 		}
 
 	static uint32_t old_s2;
@@ -96,7 +97,7 @@ void tlacitka(void) //dve techniky debouncningu: 1 kontrola zda predchozi hodnot
 	old_s2 = new_s2;
 	old_s1 = new_s1;
 }
-void tlacitkaNew(void)
+voida tlacitkaNew(void)
 {
 	static uint32_t delay;
 		if (Tick > delay + LED_TIME_PERIOD)
