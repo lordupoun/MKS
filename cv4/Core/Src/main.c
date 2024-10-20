@@ -37,6 +37,7 @@
 #define TEMP30_CAL_ADDR ((uint16_t*) ((uint32_t) 0x1FFFF7B8))
 /* Internal voltage reference calibration value address */
 #define VREFINT_CAL_ADDR ((uint16_t*) ((uint32_t) 0x1FFFF7BA))
+#define LED_TIME 1000
 
 /* USER CODE END PD */
 
@@ -67,13 +68,11 @@ static void MX_ADC_Init(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
-{
+void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc) //ADC cte vsechny piny v sekvencich (porad dokola, dle modu v Cube) - callback se vola hned s prvni konverzi - prvni v sekvenci je potenciometr, pak teplomer, pak napeti
+{ //kod zde by mel byt co nejkratsi
 	static uint8_t channel;
 	static uint32_t avg_pot;
-
 	//raw_pot = HAL_ADC_GetValue(hadc); //simple ADC reading
-
 	switch(channel)
 	{
 		case 0:
@@ -88,9 +87,6 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
 			temperature = temperature * (int32_t)(110 - 30);
 			temperature = temperature / (int32_t)(*TEMP110_CAL_ADDR - *TEMP30_CAL_ADDR);
 			temperature = temperature + 30;
-
-			//buttonTimer();
-
 			break;
 		case 2:
 			static uint32_t raw_volt;
@@ -99,17 +95,10 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
 			break;
 	}
 
-	if (__HAL_ADC_GET_FLAG(hadc, ADC_FLAG_EOS)) channel = 0;
+	if (__HAL_ADC_GET_FLAG(hadc, ADC_FLAG_EOS)) channel = 0; //Pokud je dokoncena konverze sekvence vsech ADC kanalu (EOS), resetuje se ADC na 0
 	else channel++;
 }
-void buttonTimer(void)
-{
-	static uint32_t delay;
-		if (HAL_GetTick() > delay + 1000)
-		{
-			delay = Tick;
-		}
-}
+
 /* USER CODE END 0 */
 
 /**
@@ -161,14 +150,17 @@ int main(void)
 
     /* USER CODE BEGIN 3 */
 	  static enum { SHOW_POT, SHOW_VOLT, SHOW_TEMP } state = SHOW_POT;
-	  static uint32_t delay;
+	  static uint32_t off_time;
+
 	  if(HAL_GPIO_ReadPin(S1_GPIO_Port, S1_Pin)==1)
 	  {
 		  state=SHOW_VOLT;
+		  off_time = HAL_GetTick() + LED_TIME;
 	  }
 	  if(HAL_GPIO_ReadPin(S2_GPIO_Port, S2_Pin)==1)
 	  {
 		  state=SHOW_TEMP;
+		  off_time = HAL_GetTick() + LED_TIME;
 	  }
 	  switch(state)
 	  {
@@ -179,19 +171,17 @@ int main(void)
 		break;
 		case SHOW_VOLT:
 			sct_value(temperature,0);
-			if (HAL_GetTick() > delay + 1000)
+			if (HAL_GetTick() > off_time)
 			{
-				state = SHOW_POT
-				delay = HAL_GetTick;
+				state = SHOW_POT;
 			}
 
 		break;
 	    case SHOW_TEMP:
 	    	sct_value(voltage,0);
-	    	if (HAL_GetTick() > delay + 1000)
+	    	if (HAL_GetTick() > off_time)
 	    	{
-	    		state = SHOW_POT
-	    		delay = HAL_GetTick;
+	    		state = SHOW_POT;
 	    	}
 	    break;
 	  }

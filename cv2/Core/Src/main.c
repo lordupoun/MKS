@@ -69,10 +69,11 @@ void blikac(void)
 	}
 }
 
-void tlacitka(void)
+void tlacitka(void) //dve techniky debouncningu: 1 kontrola zda predchozi hodnota je 1 a aktualni 0; nebo cteni pres promennou s bitovym posunem
 {
 	static uint16_t debounce = 0xFFFF;
 	static uint32_t off_time;
+
 		if (Tick > off_time)
 		{
 			LL_GPIO_ResetOutputPin(LED2_GPIO_Port, LED2_Pin);
