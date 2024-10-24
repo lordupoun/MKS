@@ -37,7 +37,7 @@
 #define TEMP30_CAL_ADDR ((uint16_t*) ((uint32_t) 0x1FFFF7B8))
 /* Internal voltage reference calibration value address */
 #define VREFINT_CAL_ADDR ((uint16_t*) ((uint32_t) 0x1FFFF7BA))
-#define LED_TIME 1000
+#define LED_TIME 10000
 
 /* USER CODE END PD */
 
