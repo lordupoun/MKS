@@ -163,11 +163,16 @@ static void uart_process_command(char *cmd)
 	}
 	else if (strcasecmp(token, "DUMP")==0)
 	{
-		for(uint16_t i = 0; i<16; i++)
+		for(uint16_t a = 1; a<3; a++)
 		{
-			HAL_I2C_Mem_Read(&hi2c1, EEPROM_ADDR, i, I2C_MEMADD_SIZE_16BIT, &value, sizeof(value), 1000); //sizeof(value), timeout
-			printf("Addr: 0x%02X = 0x%02X\n", i, value);
+			for(uint16_t i = 0; i<7; i++)
+			{
+				HAL_I2C_Mem_Read(&hi2c1, EEPROM_ADDR, i, I2C_MEMADD_SIZE_16BIT, &value, sizeof(value), 1000); //sizeof(value), timeout
+				printf("0x%02X ", value*2);
+			}
+			printf("\n");
 		}
+
 	}
 	/*//		token = strtok(NULL, " ");
 	if(strcasecmp(token, "ON") == 0)

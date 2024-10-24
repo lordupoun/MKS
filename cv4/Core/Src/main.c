@@ -37,7 +37,7 @@
 #define TEMP30_CAL_ADDR ((uint16_t*) ((uint32_t) 0x1FFFF7B8))
 /* Internal voltage reference calibration value address */
 #define VREFINT_CAL_ADDR ((uint16_t*) ((uint32_t) 0x1FFFF7BA))
-#define LED_TIME 10000
+#define LED_TIME 1000
 
 /* USER CODE END PD */
 
@@ -72,6 +72,7 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc) //ADC cte vsechny piny v 
 { //kod zde by mel byt co nejkratsi
 	static uint8_t channel;
 	static uint32_t avg_pot;
+
 	//raw_pot = HAL_ADC_GetValue(hadc); //simple ADC reading
 	switch(channel)
 	{
@@ -150,14 +151,15 @@ int main(void)
 
     /* USER CODE BEGIN 3 */
 	  static enum { SHOW_POT, SHOW_VOLT, SHOW_TEMP } state = SHOW_POT;
+	  state = SHOW_POT;
 	  static uint32_t off_time;
 
-	  if(HAL_GPIO_ReadPin(S1_GPIO_Port, S1_Pin)==1)
+	  if(HAL_GPIO_ReadPin(S1_GPIO_Port, S1_Pin)==0)
 	  {
 		  state=SHOW_VOLT;
 		  off_time = HAL_GetTick() + LED_TIME;
 	  }
-	  if(HAL_GPIO_ReadPin(S2_GPIO_Port, S2_Pin)==1)
+	  if(HAL_GPIO_ReadPin(S2_GPIO_Port, S2_Pin)==0)
 	  {
 		  state=SHOW_TEMP;
 		  off_time = HAL_GetTick() + LED_TIME;
