@@ -151,8 +151,8 @@ int main(void)
 
     /* USER CODE BEGIN 3 */
 	  static enum { SHOW_POT, SHOW_VOLT, SHOW_TEMP } state = SHOW_POT;
-	  state = SHOW_POT;
-	  static uint32_t off_time;
+	  //state = SHOW_POT;
+	  static uint32_t off_time=0;
 
 	  if(HAL_GPIO_ReadPin(S1_GPIO_Port, S1_Pin)==0)
 	  {
