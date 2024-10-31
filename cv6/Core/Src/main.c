@@ -109,12 +109,63 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-	  OWConvertAll();
+	  /*OWConvertAll();
 	  HAL_Delay(CONVERT_T_DELAY);
 	  int16_t temp_18b20;
 	  OWReadTemperature(&temp_18b20);
 	  sct_value(temp_18b20/10, 0);
-	  //HAL_ADC_GetValue(&hadc);
+	  //sct_value(HAL_ADC_GetValue(&hadc), 0);
+	   */
+
+	  //uint32_t result;
+	  //result=HAL_ADC_GetValue(&hadc);
+	  //sct_value(data[result], 0); //Jak to funguje?*/
+
+	  static enum { BLANK, SHOW_18b20, SHOW_NTC } state = BLANK;
+	  static uint32_t delayTime=0;
+
+	  if(HAL_GPIO_ReadPin(S2_GPIO_Port, S2_Pin)==0)
+	  {
+		  state=SHOW_18b20;
+		  sct_value(0, 0); //kvuli nervujicim zasekum
+		  HAL_GPIO_WritePin(LED1_GPIO_Port, LED1_Pin, GPIO_PIN_SET);
+		  HAL_GPIO_WritePin(LED2_GPIO_Port, LED2_Pin, GPIO_PIN_RESET);
+		  delayTime=HAL_GetTick() + CONVERT_T_DELAY;
+	  }
+	  if(HAL_GPIO_ReadPin(S1_GPIO_Port, S1_Pin)==0)
+	  {
+	 	 state=SHOW_NTC;
+	 	 HAL_GPIO_WritePin(LED2_GPIO_Port, LED2_Pin, GPIO_PIN_SET);
+	 	 HAL_GPIO_WritePin(LED1_GPIO_Port, LED1_Pin, GPIO_PIN_RESET);
+	 	 delayTime=HAL_GetTick() + 100; //dat jako konstantu
+	  }
+	  switch(state)
+	  {
+	  	  case BLANK:
+	  		  sct_value(0, 0);
+	  	  break;
+
+		  case SHOW_18b20:
+			  OWConvertAll();
+			  if(HAL_GetTick()>delayTime) //prvni hodnota neplati
+			  {
+				  int16_t temp_18b20;
+				  OWReadTemperature(&temp_18b20);
+				  sct_value(temp_18b20/10, 0);
+
+				  delayTime=HAL_GetTick() + CONVERT_T_DELAY;
+			  }
+		  break;
+
+		  case SHOW_NTC:
+			  uint32_t result;
+			  result=HAL_ADC_GetValue(&hadc);
+			  if(HAL_GetTick()>delayTime)
+			  {
+				  sct_value(data[result], 0);
+				  delayTime=HAL_GetTick() + 100;
+			  }
+	  }
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
