@@ -23,7 +23,10 @@ void sct_led(uint32_t value)
 
 	HAL_GPIO_WritePin(SCT_NOE_GPIO_Port, SCT_NOE_Pin, 0);//povolen zápis
 }
-void sct_value(uint16_t value, uint8_t led)
+/**
+ * dec = 1 - 1 desetinne misto; 2 - 2 desetinna mista; 100 - tecka na konci
+ */
+void sct_value(uint16_t value, uint8_t led, uint8_t dec)
 {
 	uint32_t reg=0;
 	reg |= reg_values[0][value / 100 % 10]; //stovky --- stačí i bez modula ale neřešil by poslání více věcí
@@ -31,6 +34,22 @@ void sct_value(uint16_t value, uint8_t led)
 	reg |= reg_values[2][value % 10]; //jednotky
 
 	reg |=reg_values[3][led];
+
+	switch(dec)
+	{
+	case 1:
+		reg |=0b0000100000000000 << 0;
+	break;
+
+	case 2:
+		reg |=0b1000000000000000 << 16;
+	break;
+
+	case 100:
+		reg |=0b1000000000000000 << 0;
+	break;
+	}
+
 
 	sct_led(reg);
 }

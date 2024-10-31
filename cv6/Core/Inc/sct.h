@@ -13,7 +13,7 @@ void sct_init(void);
 
 void sct_led(uint32_t value);
 
-void sct_value(uint16_t value, uint8_t led);
+void sct_value(uint16_t value, uint8_t led, uint8_t dec);
 
 static const uint32_t reg_values[4][10];
 
