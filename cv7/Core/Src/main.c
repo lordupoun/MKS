@@ -311,6 +311,26 @@ void StartVisualTask(void const * argument)
   /* Infinite loop */
   for(;;)
   {
+	  if (xQueueReceive(xVisualQueueHandle, &msg, portMAX_DELAY))
+	  {
+		if(msg<1000)
+		{
+			HAL_GPIO_WritePin(LED1_GPIO_Port, LED1_Pin, GPIO_PIN_SET);
+		}
+		else
+		{
+			HAL_GPIO_WritePin(LED1_GPIO_Port, LED1_Pin, GPIO_PIN_RESET);
+		}
+		if(msg >= 1000)
+		{
+			HAL_GPIO_WritePin(LED2_GPIO_Port, LED2_Pin, GPIO_PIN_SET);
+		}
+		else
+		{
+			HAL_GPIO_WritePin(LED2_GPIO_Port, LED2_Pin, GPIO_PIN_SET);
+		}
+
+	  }
     osDelay(1);
   }
   /* USER CODE END StartVisualTask */
