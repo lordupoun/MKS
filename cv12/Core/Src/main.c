@@ -46,6 +46,8 @@ UART_HandleTypeDef huart3;
 
 /* USER CODE BEGIN PV */
 extern USBD_HandleTypeDef hUsbDeviceFS;
+
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -61,14 +63,32 @@ static void MX_USART3_UART_Init(void);
 void step(int x, int y, uint8_t btn) //stejne jako boolean
 {
 	uint8_t buff[4];
-	//buff[0] = 0x01 | btn; // stiskni leve tlacitko
-	buff[0] = btn;
-	buff[1] = (int8_t)(x); // posun X +10
-	buff[2] = (int8_t)(y); // posun Y -3
-	buff[3] = 0; // bez scrollu
+	buff[0] = 0x02; //| btn; // stiskni leve tlacitko
+	buff[1] = btn;
+	buff[2] = (int8_t)(x); // posun X +10
+	buff[3] = (int8_t)(y); // posun Y -3
+	buff[4] = 0; // bez scrollu
 	USBD_HID_SendReport(&hUsbDeviceFS, buff, sizeof(buff));
-	HAL_Delay(USBD_HID_GetPollingInterval(&hUsbDeviceFS));
+	HAL_Delay(2*USBD_HID_GetPollingInterval(&hUsbDeviceFS));
+	//HAL_Delay(USBD_HID_GetPollingInterval(&hUsbDeviceFS));
 }
+void keyboard_press(uint8_t a, uint8_t b, uint8_t c)
+{
+	uint8_t buff[9];
+	buff[0] =0x01; //keyboard
+	buff[1]=0x00;	//control keys
+	buff[2]=0x00; //padding
+	buff[3]=0x0a;
+	buff[4]=0x0b;
+	buff[5]=0x0c;
+	buff[6]=0;
+	buff[7]=0;
+	buff[8]=0;
+	buff[9]=0;
+	USBD_HID_SendReport(&hUsbDeviceFS, buff, sizeof(buff));
+	HAL_Delay(10*USBD_HID_GetPollingInterval(&hUsbDeviceFS));
+}
+
 /*void draw_circle(float radius, int px, int py)
 {
 	int xx=px;
@@ -110,11 +130,11 @@ void draw_circle(float radius, int px, int py)
     //step(px, py, 0);
     step(0,0,0);
 }
-void draw_halfCircle(float radius, int px, int py)
+void draw_specCircle(float radius, int px, int py, int startAngle, int stopAngle)
 {
     float x, y;
 
-    for(int i = 90; i < 270; i++)
+    for(int i = startAngle; i < stopAngle; i++)
     {
         // Convert angle to radians
         float angle = i * (M_PI / 180); // i degrees converted to radians
@@ -142,6 +162,10 @@ void draw_line_vert(int len, int px, int py)
 		y++;
 	}
 	step(0,0,0);
+}
+void draw_line(int px, int py)
+{
+	step(px,py,1);
 }
 void move(int px, int py)
 {
@@ -191,7 +215,7 @@ int main(void)
 	  if(HAL_GPIO_ReadPin(BTN1_GPIO_Port, BTN1_Pin))
 	  {
 
-		  draw_circle(3,0,0);
+		  /*draw_circle(3,0,0);
 		  move(0,35);
 		 // draw_circle(6,0,0);
 		  draw_line_vert(2,0,20);
@@ -200,11 +224,12 @@ int main(void)
 		  move(+75,0);
 		  draw_circle(1,0,0);
 		  move(15,60); //nedavat ho sem ale do ostatnich funkci
-		  draw_halfCircle(2,0,0);//dodleat funkci circlu
-		  HAL_Delay(1000);
+		  draw_specCircle(2,0,0,90,270);//dodleat funkci circlu
+		  HAL_Delay(1000);*/
+		  keyboard_press(0x13,0x13,0x13);
 
 	  }
-
+	  keyboard_press(0x13,0x13,0x13);
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
