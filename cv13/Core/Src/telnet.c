@@ -37,17 +37,106 @@
 
 #include "lwip/sys.h"
 #include "lwip/api.h"
+#include  <stdio.h>
 
 #define TELNET_THREAD_PRIO  ( tskIDLE_PRIORITY + 4 )
 #define CMD_BUFFER_LEN 127 //jak velkej volit?
 
+static void http_client(char *s, uint16_t size)
+{
+ struct netconn *client;
+ struct netbuf *buf;
+ ip_addr_t ip;
+ uint16_t len = 0;
+ IP_ADDR4(&ip, 147,229,144,124);
+ const char *request = "GET /ip.php HTTP/1.1\r\n"
+ "Host: www.urel.feec.vutbr.cz\r\n"
+ "Connection: close\r\n"
+ "\r\n\r\n";
+ client = netconn_new(NETCONN_TCP);
+ if (netconn_connect(client, &ip, 80) == ERR_OK) {
+ netconn_write(client, request, strlen(request), NETCONN_COPY);
+ // Receive the HTTP response
+ s[0] = 0;
+ while (len < size && netconn_recv(client, &buf) == ERR_OK) {
+ len += netbuf_copy(buf, &s[len], size-len);
+ s[len] = 0;
+ netbuf_delete(buf);
+ }
+ } else {
+ sprintf(s, "Chyba pripojeni\n");
+ }
+ netconn_delete(client);
+}
 
 static void telnet_process_command(char *cmd, struct netconn *conn)
 {
-	const char *s ="Monofonie";
+	//char *s ="Monofonie";
+	char *s = "\n\r";
 	//netconn_write(conn, s, strlen(s), NETCONN_COPY);
-	cmd
-	netconn_write(conn, cmd, strlen(cmd), NETCONN_COPY);
+	if (strstr(cmd, "HELLO") != NULL)
+	{
+		s="Wolololooo!\n\r";
+	}
+	else if (strstr(cmd, "STATUS") != NULL)
+	{
+
+		if(HAL_GPIO_ReadPin(LD1_GPIO_Port, LD1_Pin)==0)
+			netconn_write(conn, "LED1=OFF\n\r", strlen("LED1=OFF\n\r"), NETCONN_COPY);
+		else if(HAL_GPIO_ReadPin(LD1_GPIO_Port, LD1_Pin)==1)
+			netconn_write(conn, "LED1=ON\n\r", strlen("LED1=ON\n\r"), NETCONN_COPY);
+		if(HAL_GPIO_ReadPin(LD2_GPIO_Port, LD2_Pin)==0)
+			netconn_write(conn, "LED2=OFF\n\r", strlen("LED1=OFF\n\r"), NETCONN_COPY);
+		else if(HAL_GPIO_ReadPin(LD2_GPIO_Port, LD2_Pin)==1)
+			netconn_write(conn, "LED2=ON\n\r", strlen("LED2=ON\n\r"), NETCONN_COPY);
+		if(HAL_GPIO_ReadPin(LD3_GPIO_Port, LD3_Pin)==0)
+			netconn_write(conn, "LED3=OFF\n\r", strlen("LED3=OFF\n\r"), NETCONN_COPY);
+		else if(HAL_GPIO_ReadPin(LD3_GPIO_Port, LD3_Pin)==1)
+			netconn_write(conn, "LED3=ON\n\r", strlen("LED3=ON\n\r"), NETCONN_COPY);
+		s="beep boop\n\r";
+	}
+	else if (strstr(cmd, "CLIENT") != NULL)
+	{
+		char response[512];
+		http_client(response, sizeof(response));
+		s=response;
+	}
+	else if (strstr(cmd, "LED1ON") != NULL)
+	{
+		HAL_GPIO_WritePin(LD1_GPIO_Port, LD1_Pin, GPIO_PIN_SET);
+		s="Job done!\n\r";
+	}
+	else if (strstr(cmd, "LED1OFF") != NULL)
+	{
+		HAL_GPIO_WritePin(LD1_GPIO_Port, LD1_Pin, GPIO_PIN_RESET);
+		s="Job done!\n\r";
+	}
+	else if (strstr(cmd, "LED2ON") != NULL)
+	{
+		HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_SET);
+		s="Job done!\n\r";
+	}
+	else if (strstr(cmd, "LED2OFF") != NULL)
+	{
+		HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_RESET);
+		s="Job done!\n\r";
+	}
+	else if (strstr(cmd, "LED3ON") != NULL)
+	{
+		HAL_GPIO_WritePin(LD3_GPIO_Port, LD3_Pin, GPIO_PIN_SET);
+		s="Job done!\n\r";
+	}
+	else if (strstr(cmd, "LED3OFF") != NULL)
+	{
+		HAL_GPIO_WritePin(LD3_GPIO_Port, LD3_Pin, GPIO_PIN_RESET);
+		s="Job done!\n\r";
+	}
+	else
+	{
+		//if(strstr(cmd, "Command unknown, better luck next time!\n\r") == NULL)
+		//s="Command unknown, better luck next time!\n\r";
+	}
+	netconn_write(conn, s, strlen(s), NETCONN_COPY);
 }
 static void telnet_byte_available(uint8_t c, struct netconn *conn)
 {
