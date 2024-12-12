@@ -131,9 +131,9 @@ static void telnet_process_command(char *cmd, struct netconn *conn)
 		HAL_GPIO_WritePin(LD3_GPIO_Port, LD3_Pin, GPIO_PIN_RESET);
 		s="Job done!\n\r";
 	}
-	else
+	else //volání z horních funkcí, goto?
 	{
-		//if(strstr(cmd, "Command unknown, better luck next time!\n\r") == NULL)
+		//if(strstr(cmd, "Command unknown, better luck next time!\n\r") == NULL||strstr(cmd, "\n\r") == NULL)
 		//s="Command unknown, better luck next time!\n\r";
 	}
 	netconn_write(conn, s, strlen(s), NETCONN_COPY);
