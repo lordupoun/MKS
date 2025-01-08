@@ -125,6 +125,8 @@ int main(void)
 		  //state++; - neni vhodne reseni; slo by posunout vse - cervenou dat v prvnim kole na pevno a v ramci case RED, nastavit case=YELLOW a dat hodnoty pro zlutou a delay
 		  //Slo by to udelat jeste jinak ale to by musela byt pamet a kod by se musel vracet do stejneho mista ve kterem byl (jako by byl misto delay HAL_Delay(...));
 		  //Aby sel zmenit cas v prubehu delaye
+		  //Static proměnná není globální -> problém s globalitou (a předáváním) bych teda řešil až u používání dalších souborů. Pokud mi proměnný stačí jako static, je to v poho.
+		  //Zalezi jak se to vezme, je to globalni staticka promenna
 		  switch(state)//mozne taky cely switch nakopirovat jeste jednou se zohlednenim chodcu!!
 		  {
 			case RED:
