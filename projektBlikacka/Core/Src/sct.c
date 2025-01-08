@@ -68,16 +68,19 @@ void sct_valueWithLEDs(uint16_t value)
 }
 void sct_ledOn(uint8_t led)
 {
+	segmReg=0;
 	ledReg |=reg_values[3][led];
 	segmReg|=ledReg; //pozor na spravnou posloupnost! ledReg|= byt nemuze protoze registr LED do kteryho se vkladaji segmenty se nevycisti
 	sct_show(segmReg);
 }
 void sct_ledOff(uint8_t led)
 {
+	segmReg=0;
 	ledReg ^=reg_values[3][led];
 	segmReg|=ledReg;
 	sct_show(segmReg);
 }
+//LED toggle je v projektSemafor
 static const uint32_t reg_values[5][10] =
 {
 	{

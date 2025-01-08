@@ -32,6 +32,7 @@
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
 #define YELLOW_TIME 1000;
+#define RED_GREEN_TIME raw_pot*15000.9/4095+5000;
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -45,7 +46,7 @@ ADC_HandleTypeDef hadc;
 UART_HandleTypeDef huart2;
 
 /* USER CODE BEGIN PV */
-
+static uint32_t raw_pot;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -59,7 +60,14 @@ static void MX_ADC_Init(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-
+void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
+{
+	static uint32_t avg_pot;
+	raw_pot = avg_pot >> 12; //ADC_Q = 12 - can vary
+	avg_pot -= raw_pot;
+	avg_pot += HAL_ADC_GetValue(hadc);
+}
+//Funkce setLight(red); - ktera pusti cervenou - to ale neni potreba protoze se svetla nemeni tak, ze by bylo potreba je adresovat jednou metodou. To by bylo vhodny az kdybych potreboval switch posunout z hlavni smycky, coz ted nepotrebuju.
 /* USER CODE END 0 */
 
 /**
@@ -98,6 +106,7 @@ int main(void)
   HAL_ADC_Start_IT(&hadc);//Start ADC
   sct_init();
   sct_ledOn(7);
+  HAL_Delay(1000);
   //HAL_Delay(1000);
   /* USER CODE END 2 */
 
@@ -109,13 +118,17 @@ int main(void)
 	  //0-cervena; 1-cervena+zluta; 2-zelena; 3-zluta
 	  static uint32_t lastTick=0;
 	  static uint16_t delay=0;
-	  static enum { RED, REDYELLOW, GREEN, YELLOW } state = YELLOW; //zacina koncem zlute - tzn. nastaveni cervene
+	  static uint8_t countdown=1;
+	  static enum { RED, REDYELLOW, GREEN, YELLOW } state = RED;
 	  if(HAL_GetTick()-lastTick>=delay)
 	  {
 		  //state++; - neni vhodne reseni; slo by posunout vse - cervenou dat v prvnim kole na pevno a v ramci case RED, nastavit case=YELLOW a dat hodnoty pro zlutou a delay
+		  //Slo by to udelat jeste jinak ale to by musela byt pamet a kod by se musel vracet do stejneho mista ve kterem byl (jako by byl misto delay HAL_Delay(...));
+		  //Aby sel zmenit cas v prubehu delaye
 		  switch(state)//mozne taky cely switch nakopirovat jeste jednou se zohlednenim chodcu!!
 		  {
 			case RED:
+				countdown=1;
 				if(pedestrian==1)
 				{
 					sct_ledOff(7);
@@ -123,10 +136,12 @@ int main(void)
 				}
 				sct_ledOff(2);
 				sct_ledOn(1);
-				delay = 5000;
+				delay = RED_GREEN_TIME;
 				state = REDYELLOW;
 				break;
 			case REDYELLOW:
+				countdown=0;
+				sct_turnOffSegm();
 				if(pedestrian==1)
 				{
 					sct_ledOff(8);
@@ -139,16 +154,20 @@ int main(void)
 				state = GREEN;
 				break;
 			case GREEN:
+				countdown=1;
 				sct_ledOff(1); //zelena
 				sct_ledOff(2);
 				sct_ledOn(3);
-				delay = 5000;
+				delay = RED_GREEN_TIME;
 				state = YELLOW;
 				break;
 			case YELLOW:
+				countdown=0;
+				sct_turnOffSegm();
 				if(pedestrian==1)
 				{
 					sct_ledOff(1);
+					sct_ledOff(5);
 				}
 				sct_ledOff(3); //zluta
 				sct_ledOn(2);
@@ -158,15 +177,20 @@ int main(void)
 		  }
 		  lastTick=HAL_GetTick();
 	  }
-	  if(HAL_GPIO_ReadPin(S1_GPIO_Port, S1_Pin)==0&&state==GREEN+1) //+1 znaci ze se program uz nachazi ve stavu Yellow, presto ze sviti zelena
+	  static uint8_t old_s2;
+	  uint8_t new_s2 = HAL_GPIO_ReadPin(S1_GPIO_Port, S1_Pin); //Debouncing
+	  if(old_s2==1 && new_s2==0&&state==GREEN+1) //+1 znaci ze se program uz nachazi ve stavu Yellow, presto ze sviti zelena
 	  {
 		  pedestrian=1;
 		  delay=0;
 		  sct_ledOn(5);
 		  state=YELLOW;
 	  }
-
-
+	  old_s2 = new_s2;
+	  if(countdown==1)
+	  {
+	  sct_valueWithLEDsSpecial(((delay-(HAL_GetTick()-lastTick))/1000)+1);
+	  }
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
