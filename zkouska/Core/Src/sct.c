@@ -9,10 +9,13 @@
 static uint32_t ledReg=0;
 static uint32_t segmReg=0;
 
+//inicializace
 void sct_init(void)
 {
 	sct_show(0);
 }
+
+//zobrazi hodnotu
 void sct_show(uint32_t value)
 {
 	for(uint8_t i=0; i<32;i++)
@@ -26,10 +29,11 @@ void sct_show(uint32_t value)
 
 	HAL_GPIO_WritePin(SCT_NOE_GPIO_Port, SCT_NOE_Pin, 0);//povolen zapis
 }
+
+//Zobrazi konkretni hodnotu s pozicemi LED a desetinnou carkou, prepise vsechny puvodni hodnoty
 /**
  * dec = 1 - 1 desetinne misto; 2 - 2 desetinna mista; 100 - tecka na konci
  */
-//Zobrazi konkretni hodnotu s pozicemi LED a desetinnou carkou, prepise vsechny puvodni hodnoty
 void sct_value(uint16_t value, uint8_t led, uint8_t dec)
 {
 	uint32_t reg=0;
@@ -78,6 +82,7 @@ void sct_valueWithLEDsSpecial(uint16_t value)
 	segmReg |=ledReg; //aby se odeslal i s LED
 	sct_show(segmReg);
 }
+//Rozsviti konkretni LED diodu (ostatni nezhasnou)
 void sct_ledOn(uint8_t led)
 {
 	segmReg=0;
@@ -85,6 +90,7 @@ void sct_ledOn(uint8_t led)
 	segmReg|=ledReg; //pozor na spravnou posloupnost! ledReg|= byt nemuze protoze registr LED do kteryho se vkladaji segmenty se nevycisti
 	sct_show(segmReg);
 }
+//Zhasne konkretni LED diodu
 void sct_ledOff(uint8_t led)
 {
 	segmReg=0;
@@ -92,6 +98,7 @@ void sct_ledOff(uint8_t led)
 	segmReg|=ledReg;
 	sct_show(segmReg);
 }
+//Toggle konkretni LED diody
 void sct_ledToggle(uint8_t led)
 {
 	segmReg=0;
@@ -99,6 +106,7 @@ void sct_ledToggle(uint8_t led)
 	segmReg|=ledReg;
 	sct_show(segmReg);
 }
+//Vypne vsechny segmenty displeje
 void sct_turnOffSegm()
 {
 	segmReg=0;
