@@ -110,7 +110,7 @@ int main(void)
 	  static uint8_t currentNum = 1; //cislo prave ukazovane kostkou
 	  uint8_t rand;
 
-	  //Obsluha S1
+	  //Obsluha S1 se zakladnim deboucningem
 	  static uint8_t old_s1;
 	  uint8_t new_s1 = HAL_GPIO_ReadPin(S1_GPIO_Port, S1_Pin);
 	  if (old_s1 && !new_s1 && diceRolling==0)
@@ -120,7 +120,7 @@ int main(void)
 	  }
 	  old_s1 = new_s1;
 
-	  //Obsluha S2
+	  //Obsluha S2 se zakladnim debouncingem
 	  static uint8_t old_s2;
 	  uint8_t new_s2 = HAL_GPIO_ReadPin(S2_GPIO_Port, S2_Pin);
 	  if (old_s2 && !new_s2 && diceRolling==0)
