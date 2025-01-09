@@ -31,7 +31,7 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-#define DICE_SPEED 40 //zakladni rychlost kostky pred zpomalenim
+#define DICE_SPEED 40 //zakladni rychlost kostky pred zpomalenim (vetsi hodnota -> pomalejsi)
 #define SLOW_VALUE 30 //vetsi hodnota, vice zpomaluje
 #define NUM_OF_ROUNDS 15 //pocet kol kostky
 #define ROUND_TO_SLOW 10 //kolo ve kterem zacne zpomalovat
@@ -107,7 +107,8 @@ int main(void)
 	  static uint8_t diceRolling=0; //probiha losovani, ano/ne
 	  static uint16_t counter=0; //kolikate protoceni kostky
 	  static uint32_t lastTick=0;
-	  static uint8_t currentNum = 1;
+	  static uint8_t currentNum = 1; //cislo prave ukazovane kostkou
+	  uint8_t rand;
 
 	  //Obsluha S1
 	  static uint8_t old_s1;
@@ -115,6 +116,7 @@ int main(void)
 	  if (old_s1 && !new_s1 && diceRolling==0)
 	  {
 		  diceRolling=1;
+		  rand=(HAL_GetTick()%6)+1; //Tvorba nahodneho cisla na kterem se kostka zastavi
 	  }
 	  old_s1 = new_s1;
 
@@ -123,19 +125,19 @@ int main(void)
 	  uint8_t new_s2 = HAL_GPIO_ReadPin(S2_GPIO_Port, S2_Pin);
 	  if (old_s2 && !new_s2 && diceRolling==0)
 	  {
-		  sct_turnOffSegm();
-		  HAL_Delay(200);//vymenit za neblokujici
-		  sct_segmDice((HAL_GetTick()%6)+1);
+		  sct_turnOffSegm(); //vynuluje displej (efekt probliknuti)
+		  HAL_Delay(200);//vymenit za neblokujici, pouze pro lepsi uzivatelskou odezvu
+		  sct_segmDice((HAL_GetTick()%6)+1); //volba nahodneho cisla
 	  }
 	  old_s2 = new_s2;
 
 	  //Beh diceRolling
 	  if (HAL_GetTick() - lastTick >= delay && diceRolling == 1)
 	  {
-		  sct_segmDice(currentNum);
-		  if(counter==NUM_OF_ROUNDS && HAL_GetTick()%4==0)//Posledni beh se zastavi na nahodnem cisle
+		  sct_segmDice(currentNum); //Zobrazeni
+		  if(counter==NUM_OF_ROUNDS && currentNum==rand)//Posledni beh se zastavi na nahodnem cisle
 		  {
-			  currentNum=6;
+			  currentNum=6;//Ukonceni smycky
 		  }
 		  currentNum++;
 		  lastTick = HAL_GetTick();
