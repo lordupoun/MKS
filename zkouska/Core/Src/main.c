@@ -31,8 +31,10 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-#define SLOW_VALUE 30 //vetsi hodnota, vice zpomaluje
 #define DICE_SPEED 40 //zakladni rychlost kostky pred zpomalenim
+#define SLOW_VALUE 30 //vetsi hodnota, vice zpomaluje
+#define NUM_OF_ROUNDS 15 //pocet kol kostky
+#define ROUND_TO_SLOW 10 //kolo ve kterem zacne zpomalovat
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -92,6 +94,7 @@ int main(void)
   MX_USART2_UART_Init();
   /* USER CODE BEGIN 2 */
   sct_init();
+  HAL_Delay(1000);
   //sct_segmDice(6);
 
   /* USER CODE END 2 */
@@ -106,25 +109,31 @@ int main(void)
 	  static uint32_t lastTick=0;
 	  static uint8_t currentNum = 1;
 
-	  static uint8_t old_s2;
+	  //Obsluha S1
 	  static uint8_t old_s1;
-	  uint8_t new_s1 = HAL_GPIO_ReadPin(S2_GPIO_Port, S2_Pin);
+	  uint8_t new_s1 = HAL_GPIO_ReadPin(S1_GPIO_Port, S1_Pin);
 	  if (old_s1 && !new_s1 && diceRolling==0)
 	  {
 		  diceRolling=1;
 	  }
 	  old_s1 = new_s1;
+
+	  //Obsluha S2
+	  static uint8_t old_s2;
 	  uint8_t new_s2 = HAL_GPIO_ReadPin(S2_GPIO_Port, S2_Pin);
 	  if (old_s2 && !new_s2 && diceRolling==0)
 	  {
+		  sct_turnOffSegm();
+		  HAL_Delay(200);//vymenit za neblokujici
 		  sct_segmDice((HAL_GetTick()%6)+1);
 	  }
 	  old_s2 = new_s2;
 
+	  //Beh diceRolling
 	  if (HAL_GetTick() - lastTick >= delay && diceRolling == 1)
 	  {
 		  sct_segmDice(currentNum);
-		  if(counter==18&&HAL_GetTick()%3==0)//možná spíš modulo 5
+		  if(counter==NUM_OF_ROUNDS && HAL_GetTick()%4==0)//Posledni beh se zastavi na nahodnem cisle
 		  {
 			  currentNum=6;
 		  }
@@ -134,11 +143,10 @@ int main(void)
 		  {
 			  currentNum = 1;
 			  counter++;
-			  if (counter > 10)
+			  if (counter > ROUND_TO_SLOW)
 			  {
 				  delay = delay + SLOW_VALUE;
-
-				  if (counter == 19)
+				  if (counter == NUM_OF_ROUNDS+1)
 				  {
 					  diceRolling = 0;
 					  counter = 0;
