@@ -15,7 +15,7 @@ void sct_init(void)
 	sct_show(0);
 }
 
-//zobrazi hodnotu
+//vysle hodnotu na IO
 void sct_show(uint32_t value)
 {
 	for(uint8_t i=0; i<32;i++)
